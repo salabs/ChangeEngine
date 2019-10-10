@@ -105,25 +105,27 @@ class TestStatusDataHandler(BaseHandler):
 class ResultUpdateHandler(BaseHandler):
     def post(self):
         data = json.loads(self.request.body)
-        test_name = data['name']
-        repository = data['repository'] if 'repository' in data else 'default'
-        subtype = data['subtype'] if 'subtype' in data else 'default'
-
         context = data['context'] if 'context' in data else 'default'
-        status = data['status']
-        fingerprint = data['fingerprint'] if 'fingerprint' in data else 'default'
+        changed_item_ids = self.item_ids(data['changes'])
+        for test in data['tests']:
+            self.update_test_links(test, changed_item_ids, context)
+
+    def update_test_links(self, test, changed_item_ids, context):
+        test_name = test['name']
+        repository = test['repository'] if 'repository' in test else 'default'
+        subtype = test['subtype'] if 'subtype' in test else 'default'
+        status = test['status']
+        fingerprint = test['fingerprint'] if 'fingerprint' in test else 'default'
 
         test = self.sync_db.test_item(test_name, repository, subtype, context)
         if test:
             test_id = test['test_id']
-            item_ids = self.item_ids(data['changes'])
-            if test['status'] == status and item_ids:
-                self.sync_db.update_links(test_id, context, 0, item_ids)
-            elif item_ids:
-                self.sync_db.update_links(test_id, context, 1/len(item_ids), item_ids)
-
+            if test['status'] == status and changed_item_ids:
+                self.sync_db.update_links(test_id, context, 0, changed_item_ids)
+            elif changed_item_ids:
+                self.sync_db.update_links(test_id, context, 1/len(changed_item_ids), changed_item_ids)
         else:
-            test_id = self.sync_db.insert_test_case(data['name'], repository, subtype)
+            test_id = self.sync_db.insert_test_case(test_name, repository, subtype)
         self.sync_db.update_previous_status(test_id, context, status, fingerprint)
 
 class PrioritizeHandler(BaseHandler):

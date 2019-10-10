@@ -3,17 +3,13 @@ Library         REST    http://localhost:${PORT}
 
 *** Variables ***
 ${PORT}=  8888
-${CHANGE_DATA1}=  { "name": "Test case full name",
-...                 "status":"PASS",
+${CHANGE_DATA1}=  { "tests": [{"name": "Test case full name", "status": "PASS"}],
 ...                 "changes": [] }
-${CHANGE_DATA2}=  { "name": "Test case full name",
-...                 "status":"FAIL",
+${CHANGE_DATA2}=  { "tests": [{"name": "Test case full name", "status": "FAIL"}],
 ...                 "changes": ["foo", "bar", {"name": "foobar", "repository": "foo"}] }
-${CHANGE_DATA3}=  { "name": "Test case full name",
-...                 "status":"PASS",
+${CHANGE_DATA3}=  { "tests": [{"name": "Test case full name", "status": "FAIL"}],
 ...                 "changes": ["foo", "bar", "foobar"] }
-${CHANGE_DATA4}=  { "name": "Test case full name",
-...                 "status": "FAIL",
+${CHANGE_DATA4}=  { "tests": [{"name": "Test case full name", "status": "FAIL"}],
 ...                 "changes": [] }
 
 ${PRIORITIZATION_DATA_WITH_TESTLIST}=
@@ -55,10 +51,10 @@ Prioritization api works with test list
     POST                /prioritize/    ${PRIORITIZATION_DATA_WITH_TESTLIST}
     Integer             response status  200
     Array               $.tests
-    Output              response body
+    #Output              response body
 
 Prioritization api works without test list
     POST                /prioritize/    ${PRIORITIZATION_DATA_WITHOUT_TESTLIST}
     Integer             response status  200
     Array               $.tests
-    Output              response body
+    #Output              response body
