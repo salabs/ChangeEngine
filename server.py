@@ -65,7 +65,7 @@ class BaseHandler(tornado.web.RequestHandler):
             if type(item) == str:
                 name = item
                 repository = 'default'
-                item_type = 'default'
+                item_type = default_type
                 subtype = 'default'
             elif type(item) == dict:
                 name = item['name']
@@ -133,9 +133,14 @@ class PrioritizeHandler(BaseHandler):
         tests = data['tests']
         changes = data['changes']
         context = data['context'] if 'context' in data else 'default'
-        test_ids = self.item_ids(tests, 'test_case')
         changed_item_ids = self.item_ids(changes)
-        prioritized = yield self.async_query(self.async_db.prioritize, context, test_ids, changed_item_ids)
+        if type(tests) == dict:
+            repository = tests['repository']
+            subtype = tests['subtype'] if 'subtype' in tests else 'default'
+            prioritized = yield self.async_query(self.async_db.prioritize, context, repository, subtype, changed_item_ids)
+        elif type(tests) == list:
+            test_ids = self.item_ids(tests, 'test_case')
+            prioritized = yield self.async_query(self.async_db.prioritize_test_list, context, test_ids, changed_item_ids)
         self.write({"tests": prioritized})
 
 

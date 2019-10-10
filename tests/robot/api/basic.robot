@@ -16,10 +16,15 @@ ${CHANGE_DATA4}=  { "name": "Test case full name",
 ...                 "status": "FAIL",
 ...                 "changes": [] }
 
+${PRIORITIZATION_DATA_WITH_TESTLIST}=
+...     { "context": "default",
+...       "tests": ["Test case full name", "Suite.Main page", "Other test"],
+...       "changes": ["foo", "bar"] }
 
-${PRIORITIZATION_DATA}=  { "context": "default",
-...                        "tests": ["Test case full name", "Suite.Main page", "Other test"],
-...                        "changes": ["foo", "bar"] }
+${PRIORITIZATION_DATA_WITHOUT_TESTLIST}=
+...     { "context": "default",
+...       "tests": {"repository": "default"},
+...       "changes": ["foo", "bar"] }
 
 *** Test cases ***
 
@@ -46,7 +51,14 @@ Test results can be posted
     POST                /result/    ${CHANGE_DATA4}
     Integer             response status  200
 
-Prioritization api works
-    POST                /prioritize/    ${PRIORITIZATION_DATA}
+Prioritization api works with test list
+    POST                /prioritize/    ${PRIORITIZATION_DATA_WITH_TESTLIST}
     Integer             response status  200
     Array               $.tests
+    Output              response body
+
+Prioritization api works without test list
+    POST                /prioritize/    ${PRIORITIZATION_DATA_WITHOUT_TESTLIST}
+    Integer             response status  200
+    Array               $.tests
+    Output              response body

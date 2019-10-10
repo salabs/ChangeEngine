@@ -48,7 +48,16 @@ DO UPDATE
            alpha=float(alpha),
            strength=float(strength))
 
-PRIORITIZE = """
+TEST_ID_SUBQUERY = """
+SELECT id
+FROM item
+WHERE repository=%(repository)s
+  AND item_type='test_case'
+  AND subtype=%(subtype)s
+"""
+
+def prioritize(use_test_list=True):
+    return """
 SELECT item.id, item.name, repository, item_type, subtype,
        status, sum(strength) as strength
 FROM item
@@ -57,7 +66,7 @@ LEFT OUTER JOIN previous_status ON previous_status.test=item.id
 LEFT OUTER JOIN link ON link.effected_item=item.id
                     AND link.context=%(context)s
                     AND link.changed_item IN %(changed_item_ids)s
-WHERE item.id IN %(test_ids)s
+WHERE item.id IN {test_ids}
 GROUP BY item.id, item.name, repository, item_type, subtype, status
 ORDER BY strength DESC NULLS LAST, status NULLS LAST
-"""
+""".format(test_ids="%(test_ids)s" if use_test_list else "({})".format(TEST_ID_SUBQUERY))

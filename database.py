@@ -5,7 +5,7 @@ import queries
 
 import sql_queries
 
-# Learning coeffiient for the link strength calculation
+# Learning coefficient for the link strength calculation
 ALPHA = 0.9
 
 class SyncDatabase(object):
@@ -61,9 +61,15 @@ class AsyncDatabase:
         values = {'name': name, 'item_type': item_type, 'subtype': subtype, 'repository': repository}
         return self.session.query(sql_queries.ITEM_ID, values), single_value
 
-    def prioritize(self, context, test_ids, changed_item_ids):
-        values = {'context': context, 'test_ids': tuple(test_ids), 'changed_item_ids': tuple(changed_item_ids)}
-        return self.session.query(sql_queries.PRIORITIZE, values), dict_formatter
+    def prioritize_test_list(self, context, test_ids, changed_item_ids):
+        values = {'context': context, 'test_ids': tuple(test_ids),
+                  'changed_item_ids': tuple(changed_item_ids)}
+        return self.session.query(sql_queries.prioritize(use_test_list=True), values), dict_formatter
+
+    def prioritize(self, context, repository, subtype, changed_item_ids):
+        values = {'context': context, 'repository': repository, 'subtype': subtype,
+                  'changed_item_ids': tuple(changed_item_ids)}
+        return self.session.query(sql_queries.prioritize(use_test_list=False), values), dict_formatter
 
 
 def list_formatter(rows):
