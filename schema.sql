@@ -4,9 +4,9 @@ CREATE TABLE item (
     repository text,
     name text,
     item_type text,
-    subtype text
+    subtype text,
+    UNIQUE (repository, item_type, subtype, name)
 );
-CREATE UNIQUE INDEX unique_item_idx ON item(repository, item_type, subtype, name);
 
 CREATE TABLE previous_status (
     test int REFERENCES item(id),

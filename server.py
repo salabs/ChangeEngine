@@ -8,7 +8,10 @@ import tornado.ioloop
 import tornado.web
 from tornado import gen
 
-VERSION = 0.1
+VERSION = "0.2.0"
+
+# This defines how strongly the algorithm learns from changes in test case fingerprint
+FINGERPRINT_LEARNING = 0.01
 
 APP_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIRECTORY = os.path.abspath(os.path.join(APP_DIRECTORY, 'static'))
@@ -23,6 +26,7 @@ def load_config_file(config_file):
 class Application(tornado.web.Application):
     def __init__(self, async_database, sync_database, config):
         handlers = [
+            (r"/", ServiceDataHandler),
             (r"/test/", TestStatusDataHandler),
             (r"/result/", ResultUpdateHandler),
             (r"/prioritize/", PrioritizeHandler),
@@ -81,7 +85,6 @@ class BaseHandler(tornado.web.RequestHandler):
             item_ids.append(item_id)
         return item_ids
 
-
 class TestStatusDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -101,6 +104,10 @@ class TestStatusDataHandler(BaseHandler):
             arguments = {"name": test_name, "context": context, "subtype": subtype}
             self.write({"Error": "Test item not found", "arguments": arguments})
 
+class ServiceDataHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        self.write({"service": "ChangeEngine", "version": VERSION})
 
 class ResultUpdateHandler(BaseHandler):
     def post(self):
@@ -117,11 +124,15 @@ class ResultUpdateHandler(BaseHandler):
         status = test['status']
         fingerprint = test['fingerprint'] if 'fingerprint' in test else 'default'
 
-        test = self.sync_db.test_item(test_name, repository, subtype, context)
-        if test:
-            test_id = test['test_id']
-            if test['status'] == status and changed_item_ids:
-                self.sync_db.update_links(test_id, context, 0, changed_item_ids)
+        old_status = self.sync_db.test_item(test_name, repository, subtype, context)
+        if old_status:
+            test_id = old_status['test_id']
+            if old_status['status'] == status and changed_item_ids:
+                if old_status['fingerprint'] != fingerprint:
+                    self.sync_db.update_links(test_id, context, FINGERPRINT_LEARNING/len(changed_item_ids),
+                                              changed_item_ids)
+                else:
+                    self.sync_db.update_links(test_id, context, 0, changed_item_ids)
             elif changed_item_ids:
                 self.sync_db.update_links(test_id, context, 1/len(changed_item_ids), changed_item_ids)
         else:
@@ -139,10 +150,12 @@ class PrioritizeHandler(BaseHandler):
         if type(tests) == dict:
             repository = tests['repository']
             subtype = tests['subtype'] if 'subtype' in tests else 'default'
-            prioritized = yield self.async_query(self.async_db.prioritize, context, repository, subtype, changed_item_ids)
+            prioritized = yield self.async_query(self.async_db.prioritize, context, repository, subtype,
+                                                 changed_item_ids)
         elif type(tests) == list:
             test_ids = self.item_ids(tests, 'test_case')
-            prioritized = yield self.async_query(self.async_db.prioritize_test_list, context, test_ids, changed_item_ids)
+            prioritized = yield self.async_query(self.async_db.prioritize_test_list, context, test_ids,
+                                                 changed_item_ids)
         self.write({"tests": prioritized})
 
 
