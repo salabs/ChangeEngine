@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import urllib.parse
 
@@ -51,6 +52,8 @@ class AsyncDatabase:
             host=host.strip().rstrip('/'),
             dbname=dbname.strip(),
         )
+        if sys.platform == 'win32':
+                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         self.session = queries.TornadoSession(connection_uri)
 
     def test_item(self, test_name, repository, subtype, context):
