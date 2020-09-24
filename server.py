@@ -172,6 +172,9 @@ if __name__ == "__main__":
                               config['db_name'],
                               config['db_user'],
                               config['db_password'])
+    
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     httpserver = tornado.httpserver.HTTPServer(Application(async_db, sync_db, config))
     httpserver.listen(int(config['port']))
     print("Server listening port {}".format(config['port']))
