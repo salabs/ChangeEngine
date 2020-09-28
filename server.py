@@ -9,6 +9,8 @@ import tornado.ioloop
 import tornado.web
 from tornado import gen
 
+from tornado_swagger.setup import setup_swagger
+
 VERSION = "0.2.0"
 
 # This defines how strongly the algorithm learns from changes in test case fingerprint
@@ -27,10 +29,10 @@ def load_config_file(config_file):
 class Application(tornado.web.Application):
     def __init__(self, async_database, sync_database, config):
         handlers = [
-            (r"/", ServiceDataHandler),
-            (r"/test/", TestStatusDataHandler),
-            (r"/result/", ResultUpdateHandler),
-            (r"/prioritize/", PrioritizeHandler),
+            tornado.web.url(r"/", ServiceDataHandler),
+            tornado.web.url(r"/test/", TestStatusDataHandler),
+            tornado.web.url(r"/result/", ResultUpdateHandler),
+            tornado.web.url(r"/prioritize/", PrioritizeHandler),
         ]
 
         settings = dict(
@@ -40,6 +42,11 @@ class Application(tornado.web.Application):
         )
         self.async_db = async_database
         self.sync_db = sync_database
+        setup_swagger(handlers,
+            swagger_url="/doc",
+            description='Project repo at https://github.com/salabs/ChangeEngine',
+            api_version='0.0.1',
+            title='Epimetheus backend API',)
         tornado.web.Application.__init__(self, handlers, **settings)
 
 
@@ -89,6 +96,44 @@ class BaseHandler(tornado.web.RequestHandler):
 class TestStatusDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - Test
+        summary: Get test data
+        description: .
+        produces:
+        - application/json
+        parameters:
+        -   name: name
+            in: query
+            description: Test name.
+            required: true
+            type: string
+        -   name: context
+            in: query
+            description: .
+            required: false
+            type: string
+            default: default
+        -   name: repository
+            in: query
+            description: .
+            required: false
+            type: string
+            default: default
+        -   name: subtype
+            in: query
+            description: .
+            required: false
+            type: string
+            default: default
+        responses:
+            200:
+                description: OK
+            404:
+                description: Test item not found
+        """
         test_name = self.get_argument('name', None)
         if not test_name:
             self.set_status(400)
@@ -108,10 +153,40 @@ class TestStatusDataHandler(BaseHandler):
 class ServiceDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - Status
+        summary: Get service status
+        description: Returns service name with version information.
+        produces:
+        - application/json
+        """
         self.write({"service": "ChangeEngine", "version": VERSION})
 
 class ResultUpdateHandler(BaseHandler):
     def post(self):
+        """
+        ---
+        tags:
+        - Result
+        summary: Post result update
+        description: ResultUpdateHandler
+        produces:
+        - application/json
+        parameters:
+        -   name: tests
+            in: query
+            description: .
+            required: true
+            type: string
+        -   name: context
+            in: query
+            description: .
+            required: false
+            type: string
+            default: default
+        """
         data = json.loads(self.request.body)
         context = data['context'] if 'context' in data else 'default'
         changed_item_ids = self.item_ids(data['changes'])
@@ -143,6 +218,32 @@ class ResultUpdateHandler(BaseHandler):
 class PrioritizeHandler(BaseHandler):
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - Prioritize
+        summary: Post prioritize
+        description: PrioritizeHandler
+        produces:
+        - application/json
+        parameters:
+        -   name: tests
+            in: query
+            description: .
+            required: true
+            type: string
+        -   name: changes
+            in: query
+            description: .
+            required: true
+            type: string
+        -   name: context
+            in: query
+            description: .
+            required: false
+            type: string
+            default: default
+        """
         data = json.loads(self.request.body)
         tests = data['tests']
         changes = data['changes']
