@@ -74,16 +74,16 @@ class BaseHandler(tornado.web.RequestHandler):
     def item_ids(self, changed_items, default_type='default'):
         item_ids = []
         for item in changed_items:
-            if type(item) == str:
+            if isinstance(item, str):
                 name = item
                 repository = 'default'
                 item_type = default_type
                 subtype = 'default'
-            elif type(item) == dict:
+            elif isinstance(item, dict):
                 name = item['name']
-                repository = item['repository'] if 'repository' in item else 'default'
-                item_type = item['subtype'] if 'subtype' in item else default_type
-                subtype = item['subtype'] if 'subtype' in item else 'default'
+                repository = item.get('repository', 'default')
+                item_type = item.get('item_type', default_type)
+                subtype = item.get('subtype', 'default')
             else:
                 raise Exception('Unsupported change items')
 
