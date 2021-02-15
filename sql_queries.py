@@ -25,11 +25,11 @@ WHERE name=%(name)s AND item_type=%(item_type)s AND subtype=%(subtype)s
 """
 
 UPSERT_PREVIOUS_STATUS = """
-INSERT INTO previous_status(test, context, status, fingerprint, last_updated)
-    VALUES (%(test)s, %(context)s, %(status)s, %(fingerprint)s, 'now')
+INSERT INTO previous_status(test, context, status, fingerprint, last_updated, execution_id)
+    VALUES (%(test)s, %(context)s, %(status)s, %(fingerprint)s, 'now', %(execution_id)s)
 ON CONFLICT (test, context)
 DO UPDATE
-    SET status=%(status)s, fingerprint=%(fingerprint)s, last_updated='now'
+    SET status=%(status)s, fingerprint=%(fingerprint)s, last_updated='now', execution_id=%(execution_id)s
 """
 
 def update_links(alpha, strength, effected_item, changed_items):

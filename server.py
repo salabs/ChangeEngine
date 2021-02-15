@@ -190,18 +190,22 @@ class ResultUpdateHandler(BaseHandler):
             type: string
             default: default
         """
-        data = json.loads(self.request.body)
-        context = data['context'] if 'context' in data else 'default'
-        changed_item_ids = self.item_ids(data['changes'])
-        for test in data['tests']:
-            self.update_test_links(test, changed_item_ids, context)
+        body = json.loads(self.request.body)
+        context = body.get('context', 'default')
+        print(json.dumps(body, indent=4))
+        changed_item_ids = self.item_ids(body['changes'])
+        print(changed_item_ids)
+        execution_id = body.get('execution_id', 'Not set')
+        print(execution_id)
+        for test in body['tests']:
+            self.update_test_links(test, changed_item_ids, context, execution_id)
 
-    def update_test_links(self, test, changed_item_ids, context):
+    def update_test_links(self, test, changed_item_ids, context, execution_id):
         test_name = test['name']
-        repository = test['repository'] if 'repository' in test else 'default'
-        subtype = test['subtype'] if 'subtype' in test else 'default'
+        repository = test.get('repository', 'default')
+        subtype = test.get('subtype', 'default')
         status = test['status']
-        fingerprint = test['fingerprint'] if 'fingerprint' in test else 'default'
+        fingerprint = test.get('fingerprint', 'default')
 
         old_status = self.sync_db.test_item(test_name, repository, subtype, context)
         if old_status:
@@ -216,7 +220,7 @@ class ResultUpdateHandler(BaseHandler):
                 self.sync_db.update_links(test_id, context, 1/len(changed_item_ids), changed_item_ids)
         else:
             test_id = self.sync_db.insert_test_case(test_name, repository, subtype)
-        self.sync_db.update_previous_status(test_id, context, status, fingerprint)
+        self.sync_db.update_previous_status(test_id, context, status, fingerprint, execution_id)
 
 
 class PrioritizeHandler(BaseHandler):

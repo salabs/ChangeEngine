@@ -35,8 +35,14 @@ class SyncDatabase(object):
         values = {'name': name, 'item_type': item_type, 'subtype': subtype, 'repository': repository}
         return single_value(self.session.query(sql_queries.ITEM_ID, values))
 
-    def update_previous_status(self, test_id, context, status, fingerprint):
-        values = {'test': test_id, 'context': context, 'status': status, 'fingerprint': fingerprint}
+    def update_previous_status(self, test_id, context, status, fingerprint, execution_id):
+        values = {
+            'test': test_id,
+            'context': context,
+            'status': status,
+            'fingerprint': fingerprint,
+            'execution_id': execution_id
+        }
         self.session.query(sql_queries.UPSERT_PREVIOUS_STATUS, values)
 
     def update_links(self, effected_item, context, strength, changed_items):
