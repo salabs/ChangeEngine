@@ -192,11 +192,8 @@ class ResultUpdateHandler(BaseHandler):
         """
         body = json.loads(self.request.body)
         context = body.get('context', 'default')
-        print(json.dumps(body, indent=4))
         changed_item_ids = self.item_ids(body['changes'])
-        print(changed_item_ids)
         execution_id = body.get('execution_id', 'Not set')
-        print(execution_id)
         for test in body['tests']:
             self.update_test_links(test, changed_item_ids, context, execution_id)
 
