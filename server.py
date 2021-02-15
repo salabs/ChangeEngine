@@ -93,6 +93,7 @@ class BaseHandler(tornado.web.RequestHandler):
             item_ids.append(item_id)
         return item_ids
 
+
 class TestStatusDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -150,6 +151,7 @@ class TestStatusDataHandler(BaseHandler):
             arguments = {"name": test_name, "context": context, "subtype": subtype}
             self.write({"Error": "Test item not found", "arguments": arguments})
 
+
 class ServiceDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -163,6 +165,7 @@ class ServiceDataHandler(BaseHandler):
         - application/json
         """
         self.write({"service": "ChangeEngine", "version": VERSION})
+
 
 class ResultUpdateHandler(BaseHandler):
     def post(self):
@@ -214,6 +217,7 @@ class ResultUpdateHandler(BaseHandler):
         else:
             test_id = self.sync_db.insert_test_case(test_name, repository, subtype)
         self.sync_db.update_previous_status(test_id, context, status, fingerprint)
+
 
 class PrioritizeHandler(BaseHandler):
     @gen.coroutine
