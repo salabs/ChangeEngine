@@ -11,7 +11,8 @@ import sql_queries
 # Learning coefficient for the link strength calculation
 ALPHA = 0.9
 
-class SyncDatabase(object):
+
+class SyncDatabase:
     def __init__(self, host, dbname, user, password):
         connection_uri = 'postgresql://{user}:{pw}@{host}/{dbname}'.format(
             user=user.strip(),
@@ -96,8 +97,10 @@ def list_formatter(rows):
         results.append(values if len(values) > 1 else values[0])
     return results
 
+
 def single_value(rows):
     return list_formatter(rows)[0] if rows else None
+
 
 def dict_formatter(rows):
     results = []
@@ -108,9 +111,6 @@ def dict_formatter(rows):
         results.append(row)
     return results
 
+
 def single_dict(rows):
     return dict_formatter(rows)[0] if rows else None
-
-
-if __name__ == '__main__':
-    pass
