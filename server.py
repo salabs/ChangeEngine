@@ -33,6 +33,7 @@ class Application(tornado.web.Application):
             tornado.web.url(r"/test/", TestStatusDataHandler),
             tornado.web.url(r"/result/", ResultUpdateHandler),
             tornado.web.url(r"/prioritize/", PrioritizeHandler),
+            tornado.web.url(r"/last_update/", LastUpdateHandler),
         ]
 
         settings = dict(
@@ -264,6 +265,34 @@ class PrioritizeHandler(BaseHandler):
             prioritized = yield self.async_query(self.async_db.prioritize_test_list, context, test_ids,
                                                  changed_item_ids)
         self.write({"tests": prioritized})
+
+
+class LastUpdateHandler(BaseHandler):
+    """
+    ---
+    tags:
+    - LastUpdate
+    summary: Returns when previous context was executed.
+    description: LastUpdateHandler
+    produces:
+    - application/json
+    """
+    @gen.coroutine
+    def get(self):
+        body = json.loads(self.request.body)
+        context = body.get('context')
+        if not context:
+            self.set_status(400)
+            self.write({"Error": "Missing context."})
+            return
+        data = self.sync_db.last_update(context)
+        return_data = {'context': context, 'details': []}
+        for row in data:
+            last_updated = row['last_updated']
+            row['last_updated'] = last_updated.isoformat()
+            row.pop('context', None)
+            return_data['details'].append(row)
+        self.write(return_data)
 
 
 if __name__ == "__main__":

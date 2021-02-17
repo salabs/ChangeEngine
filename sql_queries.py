@@ -70,3 +70,17 @@ WHERE item.id IN {test_ids}
 GROUP BY item.id, item.name, repository, item_type, subtype, status
 ORDER BY strength DESC NULLS LAST, status NULLS LAST
 """.format(test_ids="%(test_ids)s" if use_test_list else "({})".format(TEST_ID_SUBQUERY))
+
+
+def last_update(context):
+    return """
+SELECT
+	DISTINCT ON (previous_status.execution_id) execution_id,
+	previous_status.context,
+	previous_status.last_updated,
+	item.repository,
+	item.item_type,
+	item.subtype
+FROM previous_status
+INNER JOIN item ON item.id=previous_status.test
+WHERE previous_status.context='{}'""".format(context)
