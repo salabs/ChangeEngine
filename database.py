@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import sys
 import urllib.parse
+from operator import itemgetter
 
 import queries
 
@@ -46,9 +47,15 @@ class SyncDatabase(object):
         self.session.query(sql_queries.UPSERT_PREVIOUS_STATUS, values)
 
     def update_links(self, effected_item, context, strength, changed_items):
-        values = {'context': context}
         sql = sql_queries.update_links(ALPHA, strength, effected_item, changed_items)
         self.session.query(sql, {'context': context})
+
+    def last_update(self, context):
+        sql = sql_queries.last_update(context)
+        data = self.session.query(sql)
+        data = [dict(row) for row in data]
+        return sorted(data, key=itemgetter("last_updated"), reverse=True)
+
 
 class AsyncDatabase:
 
