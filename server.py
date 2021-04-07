@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import sys
+from json import JSONDecodeError
 
 import database as db
 import tornado.httpserver
@@ -280,7 +281,12 @@ class LastUpdateHandler(BaseHandler):
     """
     @gen.coroutine
     def get(self):
-        body = json.loads(self.request.body)
+        try:
+            body = json.loads(self.request.body)
+        except JSONDecodeError:
+            self.set_status(500)
+            self.write({"Error": "request body is missing."})
+            return
         context = body.get('context')
         if not context:
             self.set_status(400)
