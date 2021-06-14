@@ -285,8 +285,8 @@ class LastUpdateHandler(BaseHandler):
         try:
             body = json.loads(self.request.body)
         except JSONDecodeError:
-            self.set_status(500)
-            self.write({"Error": "request body is missing."})
+            self.set_status(400)
+            self.write({"Error": "Request body does not contain valid json."})
             return
         context = body.get('context')
         if not context:
