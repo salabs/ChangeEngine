@@ -1,7 +1,9 @@
+#!/usr/bin/python3
 import asyncio
 import json
 import os
 import sys
+from json import JSONDecodeError
 
 import database as db
 import tornado.httpserver
@@ -33,6 +35,7 @@ class Application(tornado.web.Application):
             tornado.web.url(r"/test/", TestStatusDataHandler),
             tornado.web.url(r"/result/", ResultUpdateHandler),
             tornado.web.url(r"/prioritize/", PrioritizeHandler),
+            tornado.web.url(r"/last_update/", LastUpdateHandler),
         ]
 
         settings = dict(
@@ -93,6 +96,7 @@ class BaseHandler(tornado.web.RequestHandler):
             item_ids.append(item_id)
         return item_ids
 
+
 class TestStatusDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -150,6 +154,7 @@ class TestStatusDataHandler(BaseHandler):
             arguments = {"name": test_name, "context": context, "subtype": subtype}
             self.write({"Error": "Test item not found", "arguments": arguments})
 
+
 class ServiceDataHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -163,6 +168,7 @@ class ServiceDataHandler(BaseHandler):
         - application/json
         """
         self.write({"service": "ChangeEngine", "version": VERSION})
+
 
 class ResultUpdateHandler(BaseHandler):
     def post(self):
@@ -187,18 +193,20 @@ class ResultUpdateHandler(BaseHandler):
             type: string
             default: default
         """
-        data = json.loads(self.request.body)
-        context = data['context'] if 'context' in data else 'default'
-        changed_item_ids = self.item_ids(data['changes'])
-        for test in data['tests']:
-            self.update_test_links(test, changed_item_ids, context)
+        body = json.loads(self.request.body)
+        context = body.get('context', 'default')
+        changed_item_ids = self.item_ids(body['changes'])
+        changed_item_ids = list(dict.fromkeys(changed_item_ids))
+        execution_id = body.get('execution_id', 'Not set')
+        for test in body['tests']:
+            self.update_test_links(test, changed_item_ids, context, execution_id)
 
-    def update_test_links(self, test, changed_item_ids, context):
+    def update_test_links(self, test, changed_item_ids, context, execution_id):
         test_name = test['name']
-        repository = test['repository'] if 'repository' in test else 'default'
-        subtype = test['subtype'] if 'subtype' in test else 'default'
+        repository = test.get('repository', 'default')
+        subtype = test.get('subtype', 'default')
         status = test['status']
-        fingerprint = test['fingerprint'] if 'fingerprint' in test else 'default'
+        fingerprint = test.get('fingerprint', 'default')
 
         old_status = self.sync_db.test_item(test_name, repository, subtype, context)
         if old_status:
@@ -213,7 +221,8 @@ class ResultUpdateHandler(BaseHandler):
                 self.sync_db.update_links(test_id, context, 1/len(changed_item_ids), changed_item_ids)
         else:
             test_id = self.sync_db.insert_test_case(test_name, repository, subtype)
-        self.sync_db.update_previous_status(test_id, context, status, fingerprint)
+        self.sync_db.update_previous_status(test_id, context, status, fingerprint, execution_id)
+
 
 class PrioritizeHandler(BaseHandler):
     @gen.coroutine
@@ -259,6 +268,39 @@ class PrioritizeHandler(BaseHandler):
             prioritized = yield self.async_query(self.async_db.prioritize_test_list, context, test_ids,
                                                  changed_item_ids)
         self.write({"tests": prioritized})
+
+
+class LastUpdateHandler(BaseHandler):
+    """
+    ---
+    tags:
+    - LastUpdate
+    summary: Returns when previous context was executed.
+    description: LastUpdateHandler
+    produces:
+    - application/json
+    """
+    @gen.coroutine
+    def get(self):
+        try:
+            body = json.loads(self.request.body)
+        except JSONDecodeError:
+            self.set_status(400)
+            self.write({"Error": "Request body does not contain valid json."})
+            return
+        context = body.get('context')
+        if not context:
+            self.set_status(400)
+            self.write({"Error": "Missing context."})
+            return
+        data = self.sync_db.last_update(context)
+        return_data = {'context': context, 'details': []}
+        for row in data:
+            last_updated = row['last_updated']
+            row['last_updated'] = last_updated.isoformat()
+            row.pop('context', None)
+            return_data['details'].append(row)
+        self.write(return_data)
 
 
 if __name__ == "__main__":

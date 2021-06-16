@@ -14,6 +14,7 @@ CREATE TABLE previous_status (
     status text,
     fingerprint text,
     last_updated timestamp,
+    execution_id text,
     PRIMARY KEY (test, context)
 );
 

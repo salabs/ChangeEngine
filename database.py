@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import sys
 import urllib.parse
+from operator import itemgetter
 
 import queries
 
@@ -10,7 +11,8 @@ import sql_queries
 # Learning coefficient for the link strength calculation
 ALPHA = 0.9
 
-class SyncDatabase(object):
+
+class SyncDatabase:
     def __init__(self, host, dbname, user, password):
         connection_uri = 'postgresql://{user}:{pw}@{host}/{dbname}'.format(
             user=user.strip(),
@@ -35,14 +37,26 @@ class SyncDatabase(object):
         values = {'name': name, 'item_type': item_type, 'subtype': subtype, 'repository': repository}
         return single_value(self.session.query(sql_queries.ITEM_ID, values))
 
-    def update_previous_status(self, test_id, context, status, fingerprint):
-        values = {'test': test_id, 'context': context, 'status': status, 'fingerprint': fingerprint}
+    def update_previous_status(self, test_id, context, status, fingerprint, execution_id):
+        values = {
+            'test': test_id,
+            'context': context,
+            'status': status,
+            'fingerprint': fingerprint,
+            'execution_id': execution_id
+        }
         self.session.query(sql_queries.UPSERT_PREVIOUS_STATUS, values)
 
     def update_links(self, effected_item, context, strength, changed_items):
-        values = {'context': context}
         sql = sql_queries.update_links(ALPHA, strength, effected_item, changed_items)
         self.session.query(sql, {'context': context})
+
+    def last_update(self, context):
+        sql = sql_queries.last_update(context)
+        data = self.session.query(sql)
+        data = [dict(row) for row in data]
+        return sorted(data, key=itemgetter("last_updated"), reverse=True)
+
 
 class AsyncDatabase:
 
@@ -83,8 +97,10 @@ def list_formatter(rows):
         results.append(values if len(values) > 1 else values[0])
     return results
 
+
 def single_value(rows):
     return list_formatter(rows)[0] if rows else None
+
 
 def dict_formatter(rows):
     results = []
@@ -95,9 +111,6 @@ def dict_formatter(rows):
         results.append(row)
     return results
 
+
 def single_dict(rows):
     return dict_formatter(rows)[0] if rows else None
-
-
-if __name__ == '__main__':
-    pass
