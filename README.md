@@ -83,6 +83,7 @@ Now simply tell the url where ChangeEngine is waiting for data to test archiver.
 ```
 testarchiver --change-engine-url CHANGE_ENGINE_URL output.xml
 ```
+For more details about the data expected by the feeding API see [feeding_api.md](feeding_api.md).
 
 ### Prioritize test cases
 Once data is inserted prioritizations can be queried from the ChangeEngine based on a list of new changes. If no changes are given the algorithm defaults to listing test cases based on their most recent failures.
