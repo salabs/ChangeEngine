@@ -256,7 +256,7 @@ class PrioritizeHandler(BaseHandler):
         data = json.loads(self.request.body)
         tests = data['tests']
         changes = data['changes']
-        context = data['context'] if 'context' in data else 'default'
+        context = data.get('context', 'default')
         changed_item_ids = self.item_ids(changes)
         if type(tests) == dict:
             repository = tests['repository']
