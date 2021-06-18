@@ -256,11 +256,11 @@ class PrioritizeHandler(BaseHandler):
         data = json.loads(self.request.body)
         tests = data['tests']
         changes = data['changes']
-        context = data['context'] if 'context' in data else 'default'
+        context = data.get('context', 'default')
         changed_item_ids = self.item_ids(changes)
         if type(tests) == dict:
             repository = tests['repository']
-            subtype = tests['subtype'] if 'subtype' in tests else 'default'
+            subtype = tests.get('subtype', 'default')
             prioritized = yield self.async_query(self.async_db.prioritize, context, repository, subtype,
                                                  changed_item_ids)
         elif type(tests) == list:

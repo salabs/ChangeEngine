@@ -32,6 +32,7 @@ DO UPDATE
     SET status=%(status)s, fingerprint=%(fingerprint)s, last_updated='now', execution_id=%(execution_id)s
 """
 
+
 def update_links(alpha, strength, effected_item, changed_items):
     VALUES_ROW = "({effected_item}, {strength}, {changed_item}, %(context)s, 'now')"
     value_rows = []
@@ -48,6 +49,7 @@ DO UPDATE
            alpha=float(alpha),
            strength=float(strength))
 
+
 TEST_ID_SUBQUERY = """
 SELECT id
 FROM item
@@ -56,15 +58,16 @@ WHERE repository=%(repository)s
   AND subtype=%(subtype)s
 """
 
+
 def prioritize(use_test_list=True):
     return """
 SELECT item.id, item.name, repository, item_type, subtype,
        status, sum(strength) as strength
 FROM item
 LEFT OUTER JOIN previous_status ON previous_status.test=item.id
-                               AND previous_status.context=%(context)s
+                               AND previous_status.context LIKE %(context)s
 LEFT OUTER JOIN link ON link.effected_item=item.id
-                    AND link.context=%(context)s
+                    AND link.context LIKE %(context)s
                     AND link.changed_item IN %(changed_item_ids)s
 WHERE item.id IN {test_ids}
 GROUP BY item.id, item.name, repository, item_type, subtype, status
