@@ -100,6 +100,7 @@ robot --argumentfile prioritized.robot --metadata changes:"$(YOUR_GIT_COMMAND_LI
 
 robot --argumentfile remnant.robot --metadata changes:"$(YOUR_GIT_COMMAND_LISTING_RELEVANT_CHANGES)" --metadata commit:$(git rev-parse HEAD) tests/
 ```
+For more details about the data expected by the prioritization API see [prioritization_api.md](prioritization_api.md).
 
 ## Swagger docs
 
